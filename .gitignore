@@ -1,0 +1,36 @@
+# Ignore all files in the IMG folder
+../IMG/*
+
+# Ignore Python compiled files
+*.pyc
+*.pyo
+__pycache__/
+*.pyd
+*.whl
+
+# Ignore environment files and package manager files
+env/
+venv/
+*.egg-info/
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Ignore model files (assuming models are stored as .h5, .pt, or other common formats)
+*.h5
+*.pt
+*.onnx
+*.ckpt
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore VS Code settings (if using)
+.vscode/
+
+# Ignore logs and other temporary files
+*.log
+*.tmp
+
+# Ignore MacOS system files
+.DS_Store
