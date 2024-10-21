@@ -1,5 +1,5 @@
 # Ignore all files in the IMG folder
-../IMG/*
+IMG/*
 
 # Ignore Python compiled files
 *.pyc
