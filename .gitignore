@@ -32,5 +32,8 @@ poetry.lock
 *.log
 *.tmp
 
+
+# Ignore Database file
+*.db
 # Ignore MacOS system files
 .DS_Store
