@@ -1,6 +1,6 @@
 # Ignore all files in the IMG folder
 IMG/*
-
+GUI/PredictIMG/*
 # Ignore Python compiled files
 *.pyc
 *.pyo
