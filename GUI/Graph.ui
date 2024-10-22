@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="5" column="1">
+     <widget class="QLabel" name="PreedictLabel">
+      <property name="text">
+       <string>Predict IMG</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0" colspan="5">
+     <widget class="QCalendarWidget" name="calendarWidget"/>
+    </item>
+    <item row="6" column="3">
+     <widget class="QLCDNumber" name="PeopleNumber"/>
+    </item>
+    <item row="6" column="0" colspan="3">
+     <widget class="QGraphicsView" name="PredictIMGView"/>
+    </item>
+    <item row="7" column="2">
+     <widget class="QPushButton" name="NextButton">
+      <property name="text">
+       <string>Next</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="5">
+     <widget class="QTableWidget" name="tableHistory"/>
+    </item>
+    <item row="6" column="4">
+     <widget class="QGraphicsView" name="GraphView"/>
+    </item>
+    <item row="7" column="0">
+     <widget class="QPushButton" name="PreviousButton">
+      <property name="text">
+       <string>Previous</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="4">
+     <widget class="QLabel" name="GraphLabel">
+      <property name="text">
+       <string>Graph</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5" rowspan="2">
+     <widget class="QComboBox" name="Model_Select">
+      <item>
+       <property name="text">
+        <string>YoloV5</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>YOloV8</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Mask-R-CNN</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Faster-R-CNN</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>CSRNet</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="5" column="5">
+     <widget class="QLabel" name="HistoryLabel">
+      <property name="text">
+       <string>History</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1024</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
