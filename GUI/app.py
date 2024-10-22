@@ -12,7 +12,7 @@ from datetime import datetime
 class Ui_BasketballCrowdCounting(object):
     def setupUi(self, BasketballCrowdCounting):
         BasketballCrowdCounting.setObjectName("BasketballCrowdCounting")
-        BasketballCrowdCounting.resize(1024, 600)
+        BasketballCrowdCounting.resize(1366, 768)
         self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -127,7 +127,9 @@ class Ui_BasketballCrowdCounting(object):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 date TEXT,
                 time TEXT,
-                path TEXT
+                people_count INTEGER DEFAULT NULL,
+                image_path TEXT,
+                predict_path TEXT DEFAULT NULL
             )
         ''')
 
@@ -169,11 +171,11 @@ class Ui_BasketballCrowdCounting(object):
                             # Formatting the time as HH:MM
                             time = dt_obj.strftime('%H:%M')
 
-                    # Insert the extracted data into the database
+                    # Insert the extracted data into the database, setting people_count and predict_path as None
                     cursor.execute('''
-                        INSERT INTO image_metadata (date, time, path)
-                        VALUES (?, ?, ?)
-                    ''', (date, time, image_path))
+                        INSERT INTO image_metadata (date, time, people_count, image_path, predict_path)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (date, time, None, image_path, None))
 
                     print(f"Processed: {image_path} - Date: {date}, Time: {time}")
 
@@ -217,7 +219,7 @@ class Ui_BasketballCrowdCounting(object):
 class Ui_SecondPage(object):
     def setupUi(self, BasketballCrowdCounting):
         BasketballCrowdCounting.setObjectName("SecondPage")
-        BasketballCrowdCounting.resize(1024, 600)
+        BasketballCrowdCounting.resize(1366, 768)
         self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
         self.centralwidget.setObjectName("centralwidget")
 
