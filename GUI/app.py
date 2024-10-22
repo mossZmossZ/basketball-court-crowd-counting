@@ -217,7 +217,7 @@ class Ui_BasketballCrowdCounting(object):
 class Ui_SecondPage(object):
     def setupUi(self, BasketballCrowdCounting):
         BasketballCrowdCounting.setObjectName("SecondPage")
-        BasketballCrowdCounting.resize(800, 600)
+        BasketballCrowdCounting.resize(1024, 600)
         self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
         self.centralwidget.setObjectName("centralwidget")
 
