@@ -18,15 +18,53 @@ class Ui_BasketballCrowdCounting(object):
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
 
-        # Table to display folder content
+        # Credit Button
+        self.CreditButton = QtWidgets.QPushButton(self.centralwidget)
+        self.CreditButton.setObjectName("CreditButton")
+        self.gridLayout.addWidget(self.CreditButton, 9, 0, 1, 1)
+
+        #Open Database Button
+        self.OpenDatabase = QtWidgets.QPushButton(self.centralwidget)
+        font = QtGui.QFont()
+        font.setPointSize(26)
+        self.OpenDatabase.setFont(font)
+        self.OpenDatabase.setObjectName("OpenDatabase")
+        self.gridLayout.addWidget(self.OpenDatabase, 1, 1, 1, 1)
+
+        #Folder Label
+        self.FolderLabel = QtWidgets.QLabel(self.centralwidget)
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.FolderLabel.setFont(font)
+        self.FolderLabel.setObjectName("FolderLabel")
+        self.gridLayout.addWidget(self.FolderLabel, 6, 0, 1, 1)
+
+        #Total Number
+        self.Number = QtWidgets.QLabel(self.centralwidget)
+        font = QtGui.QFont()
+        font.setPointSize(16)
+        self.Number.setFont(font)
+        self.Number.setObjectName("Number")
+        self.gridLayout.addWidget(self.Number, 6, 1, 1, 1)
+
+        #Table to display folder content
         self.tableFolder = QtWidgets.QTableView(self.centralwidget)
         font = QtGui.QFont()
         font.setPointSize(14)
         self.tableFolder.setFont(font)
         self.tableFolder.setObjectName("tableFolder")
-        self.gridLayout.addWidget(self.tableFolder, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.tableFolder, 4, 0, 1, 1)
 
-        # Start Process Button
+        #OpenFolderButton
+        self.OpenFolderButton = QtWidgets.QPushButton(self.centralwidget)
+        font = QtGui.QFont()
+        font.setPointSize(26)
+        self.OpenFolderButton.setFont(font)
+        self.OpenFolderButton.setObjectName("OpenFolderButton")
+        self.OpenFolderButton.clicked.connect(self.openFolderDialog)  # Connect the button to openFolderDialog
+        self.gridLayout.addWidget(self.OpenFolderButton, 1, 0, 1, 1)
+
+        #Start Process Button
         self.ProcessButton = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
         font.setPointSize(20)
@@ -34,49 +72,16 @@ class Ui_BasketballCrowdCounting(object):
         self.ProcessButton.setObjectName("ProcessButton")
         self.ProcessButton.setEnabled(False)  # Initially disable the Process button
         self.ProcessButton.clicked.connect(lambda: self.openNewPage(BasketballCrowdCounting))  # Pass window instance
-        self.gridLayout.addWidget(self.ProcessButton, 3, 1, 1, 1)
+        self.gridLayout.addWidget(self.ProcessButton, 7, 0, 1, 1)
 
-        # Folder Label
-        self.FolderLabel = QtWidgets.QLabel(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(16)
-        self.FolderLabel.setFont(font)
-        self.FolderLabel.setObjectName("FolderLabel")
-        self.gridLayout.addWidget(self.FolderLabel, 2, 1, 1, 1)
-
-        # Credit Button
-        self.CreditButton = QtWidgets.QPushButton(self.centralwidget)
-        self.CreditButton.setObjectName("CreditButton")
-        self.gridLayout.addWidget(self.CreditButton, 4, 0, 1, 1)
-
-        # Open Folder Button
-        self.OpenFolderButton = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(26)
-        self.OpenFolderButton.setFont(font)
-        self.OpenFolderButton.setObjectName("OpenFolderButton")
-        self.OpenFolderButton.clicked.connect(self.openFolderDialog)  # Connect the button to openFolderDialog
-        self.gridLayout.addWidget(self.OpenFolderButton, 0, 1, 1, 1)
-
-        # LCD Display for Counting Images
+        #Number Count
         self.CountImg = QtWidgets.QLCDNumber(self.centralwidget)
         self.CountImg.setObjectName("CountImg")
-        self.gridLayout.addWidget(self.CountImg, 3, 0, 1, 1)
-
-        # Label for Total Number of Images
-        self.Number = QtWidgets.QLabel(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(16)
-        self.Number.setFont(font)
-        self.Number.setObjectName("Number")
-        self.gridLayout.addWidget(self.Number, 2, 0, 1, 1)
-
+        self.gridLayout.addWidget(self.CountImg, 7, 1, 1, 1)
 
         BasketballCrowdCounting.setCentralWidget(self.centralwidget)
-        
-        # Menu bar
         self.menubar = QtWidgets.QMenuBar(BasketballCrowdCounting)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1024, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1024, 26))
         self.menubar.setObjectName("menubar")
         BasketballCrowdCounting.setMenuBar(self.menubar)
 
@@ -86,10 +91,12 @@ class Ui_BasketballCrowdCounting(object):
     def retranslateUi(self, BasketballCrowdCounting):
         _translate = QtCore.QCoreApplication.translate
         BasketballCrowdCounting.setWindowTitle(_translate("BasketballCrowdCounting", "Basketball Court Crowd Counting"))
-        self.ProcessButton.setText(_translate("BasketballCrowdCounting", "Start Process"))
-        self.FolderLabel.setText(_translate("BasketballCrowdCounting", "No folder selected"))
         self.CreditButton.setText(_translate("BasketballCrowdCounting", "Credit"))
+        self.OpenDatabase.setText(_translate("BasketballCrowdCounting", "Database"))
+        self.FolderLabel.setText(_translate("BasketballCrowdCounting", "No Folder Selected"))
+        self.Number.setText(_translate("BasketballCrowdCounting", "Total Picture"))
         self.OpenFolderButton.setText(_translate("BasketballCrowdCounting", "Open Folder"))
+        self.ProcessButton.setText(_translate("BasketballCrowdCounting", "Start Process"))
 
     def openFolderDialog(self):
         # Open a folder dialog and get the selected folder path
@@ -179,8 +186,9 @@ class Ui_BasketballCrowdCounting(object):
 
         # Update the LCD display and label after processing
         self.CountImg.display(image_count)
-        self.FolderLabel.setText(f'Images from {folder_path} processed successfully!')
-
+        self.FolderLabel.setText(f'Images loaded successfully!')
+        self.OpenFolderButton.setEnabled(False) # Diable Open Folder Button
+        self.OpenDatabase.setEnabled(False) #Disble Open Database Button
     def showTable(self, folder):
         # Create a model to hold the data
         model = QStandardItemModel()
