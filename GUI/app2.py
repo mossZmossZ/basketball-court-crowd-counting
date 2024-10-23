@@ -12,7 +12,7 @@ from datetime import datetime
 class Ui_BasketballCrowdCounting(object):
     def setupUi(self, BasketballCrowdCounting):
         BasketballCrowdCounting.setObjectName("BasketballCrowdCounting")
-        BasketballCrowdCounting.resize(1024, 600)
+        BasketballCrowdCounting.resize(1366, 768)
         self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
@@ -89,12 +89,6 @@ class Ui_BasketballCrowdCounting(object):
         self.FasterRCheckbox.setFont(font)
         self.FasterRCheckbox.setObjectName("FasterRCheckbox")
         self.verticalLayout.addWidget(self.FasterRCheckbox)
-        self.CSRNetcheckbox = QtWidgets.QCheckBox(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(16)
-        self.CSRNetcheckbox.setFont(font)
-        self.CSRNetcheckbox.setObjectName("CSRNetcheckbox")
-        self.verticalLayout.addWidget(self.CSRNetcheckbox)
         self.gridLayout.addLayout(self.verticalLayout, 2, 1, 1, 1)
         self.label = QtWidgets.QLabel(self.centralwidget)
         font = QtGui.QFont()
@@ -125,7 +119,6 @@ class Ui_BasketballCrowdCounting(object):
         self.YoloV8_CheckBox.setText(_translate("BasketballCrowdCounting", "YoloV8"))
         self.MaskRcheckBox.setText(_translate("BasketballCrowdCounting", "Mask-R-CNN"))
         self.FasterRCheckbox.setText(_translate("BasketballCrowdCounting", "Faster-R-CNN"))
-        self.CSRNetcheckbox.setText(_translate("BasketballCrowdCounting", "CSRNet"))
         self.label.setText(_translate("BasketballCrowdCounting", "Select Models"))
 
     def openFolderDialog(self):
@@ -218,8 +211,6 @@ class Ui_BasketballCrowdCounting(object):
             models.append("Mask-R-CNN")
         if self.FasterRCheckbox.isChecked():
             models.append("Faster-R-CNN")
-        if self.CSRNetcheckbox.isChecked():
-            models.append("CSRNet")
         return models if models else None
 
 class Ui_SecondPage(object):
