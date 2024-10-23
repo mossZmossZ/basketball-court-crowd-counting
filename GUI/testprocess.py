@@ -29,7 +29,7 @@ class DatabaseManager:
                 people_count INTEGER,
                 image_path TEXT,
                 predict_path TEXT,
-                model TEXT
+                model_name TEXT
             )
         ''')
         self.conn.commit()
@@ -37,7 +37,7 @@ class DatabaseManager:
     # ฟังก์ชันเพิ่มข้อมูลลงในตาราง
     def insert_record(self, date, time, people_count, image_path):
         self.cursor.execute('''
-            INSERT INTO image_metadata (date, time, people_count, image_path, predict_path, model)
+            INSERT INTO image_metadata (date, time, people_count, image_path, predict_path, model_name)
             VALUES (?, ?, ?, ?, ?)
         ''', (date, time, people_count, image_path))
         self.conn.commit()
@@ -71,15 +71,15 @@ class DatabaseManager:
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
-    def fetch_data_by_date(self, date, model):
+    def fetch_data_by_date(self, date, model_name):
         query = """
         SELECT date, time, people_count
         FROM image_metadata
-        WHERE date = ? AND model = ?
+        WHERE date = ? AND model_name = ?
         ORDER BY people_count DESC
         LIMIT 1
         """
-        self.cursor.execute(query, (date, model))
+        self.cursor.execute(query, (date, model_name))
         return self.cursor.fetchall()
     
     def fetch_people_count_by_image_path(self, predict_path):
@@ -88,9 +88,9 @@ class DatabaseManager:
         result = self.cursor.fetchone()
         return result[0] if result else 0  # Return the count or 0 if no record found
 
-    def fetch_predict_image_paths_by_date(self, date, model):
-        query = "SELECT predict_path FROM image_metadata WHERE date = ? AND model = ?"
-        self.cursor.execute(query, (date, model))
+    def fetch_predict_image_paths_by_date(self, date, model_name):
+        query = "SELECT predict_path FROM image_metadata WHERE date = ? AND model_name = ?"
+        self.cursor.execute(query, (date, model_name))
         results = self.cursor.fetchall()  # Fetch all matching records
         return [result[0] for result in results] if results else [] 
     
@@ -106,15 +106,15 @@ class DatabaseManager:
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
-    def Line_Chart_fetch_data_by_date(self, date, model):
+    def Line_Chart_fetch_data_by_date(self, date, model_name):
         query = '''
             SELECT time, MAX(people_count) AS total_count
             FROM image_metadata
-            WHERE date = ? AND model = ?
+            WHERE date = ? AND model_name = ?
             GROUP BY time
             ORDER BY total_count DESC
         '''
-        self.cursor.execute(query, (date, model))
+        self.cursor.execute(query, (date, model_name))
         results = self.cursor.fetchall()  # Get the results as a list of tuples
 
         # Convert to a dictionary
@@ -247,14 +247,14 @@ class ShowGraphProcess(QMainWindow):
 
         # Model Name Combo Box
         self.model_combo_box = CustomComboBox()
-        model = [
+        model_names = [
             "YoloV5",
             "YoloV8",
             "Mask-R-CNN",
             "Faster-R-CNN",
             "CSRNet"
         ]
-        self.model_combo_box.addItems(model)
+        self.model_combo_box.addItems(model_names)
 
         # Set the size for the combo box
         self.model_combo_box.setFixedSize(800, 40)
