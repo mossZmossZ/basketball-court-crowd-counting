@@ -4,6 +4,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QFileDialog, QTableView, QHeaderView, QMessageBox
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
+from PyQt5.QtCore import Qt
 from PIL import Image
 from PIL.ExifTags import TAGS
 from datetime import datetime
@@ -11,6 +12,7 @@ from datetime import datetime
 # Main UI class for Basketball Crowd Counting
 class Ui_BasketballCrowdCounting(object):
     def setupUi(self, BasketballCrowdCounting):
+        self.main_window = BasketballCrowdCounting  # Store the QMainWindow instance
         BasketballCrowdCounting.setObjectName("BasketballCrowdCounting")
         BasketballCrowdCounting.resize(1366, 768)
         self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
@@ -25,7 +27,7 @@ class Ui_BasketballCrowdCounting(object):
         font.setPointSize(26)
         self.OpenFolderButton.setFont(font)
         self.OpenFolderButton.setObjectName("OpenFolderButton")
-        self.OpenFolderButton.clicked.connect(self.openFolderDialog)
+        self.OpenFolderButton.clicked.connect(self.openFolderDialog)  # Connect the button to openFolderDialog
         self.gridLayout.addWidget(self.OpenFolderButton, 0, 0, 1, 1)
         self.tableFolder = QtWidgets.QTableView(self.centralwidget)
         font = QtGui.QFont()
@@ -45,7 +47,7 @@ class Ui_BasketballCrowdCounting(object):
         self.ProcessButton.setFont(font)
         self.ProcessButton.setObjectName("ProcessButton")
         self.ProcessButton.setEnabled(False)  # Initially disabled
-        self.ProcessButton.clicked.connect(lambda: self.openNewPage(BasketballCrowdCounting))
+        self.ProcessButton.clicked.connect(lambda: self.openNewPage(BasketballCrowdCounting))  # Pass window instance
         self.gridLayout.addWidget(self.ProcessButton, 5, 0, 1, 1)
         self.FolderLabel = QtWidgets.QLabel(self.centralwidget)
         font = QtGui.QFont()
@@ -58,6 +60,7 @@ class Ui_BasketballCrowdCounting(object):
         font.setPointSize(26)
         self.OpenDatabase.setFont(font)
         self.OpenDatabase.setObjectName("OpenDatabase")
+        self.OpenDatabase.clicked.connect(self.openDatabasePage)
         self.gridLayout.addWidget(self.OpenDatabase, 0, 1, 1, 1)
         self.CreditButton = QtWidgets.QPushButton(self.centralwidget)
         self.CreditButton.setObjectName("CreditButton")
@@ -122,22 +125,30 @@ class Ui_BasketballCrowdCounting(object):
         self.label.setText(_translate("BasketballCrowdCounting", "Select Models"))
 
     def openFolderDialog(self):
+        # Open a folder dialog and get the selected folder path
         folder = QFileDialog.getExistingDirectory(None, 'Select Folder')
         if folder:
             self.FolderLabel.setText(f'Selected Folder: {folder}')
             self.selectedFolder = folder
-            self.ProcessButton.setEnabled(True)  # Enable the process button after loading the folder
+            self.ProcessButton.setEnabled(True)  # Enable the process button
             self.processImages()
             self.showTable(folder)
+            self.ProcessButton.setEnabled(True)  # Enable Process Button
 
     def processImages(self):
+        # Ensure a folder is selected
         if not hasattr(self, 'selectedFolder'):
             self.FolderLabel.setText('Please select a folder first!')
             return
 
+        # Path to the selected folder
         folder_path = self.selectedFolder
-        conn = sqlite3.connect('image_metadata.db')
+
+        # Database setup
+        conn = sqlite3.connect('image_metadata.db')  # Connect to SQLite database
         cursor = conn.cursor()
+
+        # Create table if it doesn't exist, adding the new 'model' column
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS image_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,62 +157,98 @@ class Ui_BasketballCrowdCounting(object):
                 people_count INTEGER DEFAULT NULL,
                 image_path TEXT,
                 predict_path TEXT DEFAULT NULL,
-                model TEXT DEFAULT NULL
+                model TEXT DEFAULT NULL  -- New column 'model'
             )
         ''')
 
         image_count = 0
+
+        # Loop through all files in the folder
         for filename in os.listdir(folder_path):
-            if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png')):  # Filter image files
                 image_path = os.path.join(folder_path, filename)
                 image_count += 1
                 try:
+                    # Open the image
                     image = Image.open(image_path)
+                    # Extracting the exif metadata
                     exifdata = image.getexif()
-                    date, time = None, None
+                    # Initialize variables for date and time
+                    date = None
+                    time = None
+                    # Loop through all the tags present in exifdata
                     for tagid in exifdata:
                         tagname = TAGS.get(tagid, tagid)
                         value = exifdata.get(tagid)
+                        # Looking for the DateTime tag
                         if tagname == 'DateTime':
+                            # Original format: 'YYYY:MM:DD HH:MM:SS'
                             datetime_str = value
+                            # Converting to datetime object
                             dt_obj = datetime.strptime(datetime_str, '%Y:%m:%d %H:%M:%S')
+                            # Formatting the date as YYYY-MM-DD
                             date = dt_obj.strftime('%Y-%m-%d')
+                            # Formatting the time as HH:MM
                             time = dt_obj.strftime('%H:%M')
+                    # Insert the extracted data into the database, setting people_count, predict_path, and model as None
                     cursor.execute('''
                         INSERT INTO image_metadata (date, time, people_count, image_path, predict_path, model)
                         VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (date, time, None, image_path, None, None))
+                    ''', (date, time, None, image_path, None, None))  # 'model' is set to None
                     print(f"Processed: {image_path} - Date: {date}, Time: {time}")
                 except Exception as e:
                     print(f"Failed to process {filename}: {e}")
-
+        
+        # Commit the transaction and close the connection
         conn.commit()
         conn.close()
 
+        # Update the LCD display and label after processing
         self.CountImg.display(image_count)
         self.FolderLabel.setText(f'Images loaded successfully!')
-        self.OpenFolderButton.setEnabled(False)
-        self.OpenDatabase.setEnabled(False)
+        self.OpenFolderButton.setEnabled(False)  # Disable Open Folder Button
+        self.OpenDatabase.setEnabled(False)  # Disable Open Database Button
 
     def showTable(self, folder):
+        # Create a model to hold the data
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(['Path'])
+        model.setHorizontalHeaderLabels(['Path'])  # Only one header for the path
+
+        # Loop through all files in the folder and add them to the model
         for filename in os.listdir(folder):
-            if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png')):  # Only include image files
                 image_path = os.path.join(folder, filename)
                 model.appendRow([QStandardItem(image_path)])
+
+        # Set the model to the table view
         self.tableFolder.setModel(model)
-        self.tableFolder.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableFolder.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)  # Make the column stretch to fit
 
     def openNewPage(self, BasketballCrowdCounting):
-        selected_model = self.get_selected_model()
-        if selected_model:
-            self.new_page_ui = Ui_SecondPage(selected_model)
-            self.new_page_ui.setupUi(BasketballCrowdCounting)
+        selected_models = self.get_selected_models()
+        if selected_models:
+            self.controller = Controller(BasketballCrowdCounting)  # Pass the QMainWindow here
+            self.controller.startProcessing(selected_models)
         else:
             QMessageBox.warning(None, "No Model Selected", "Please select at least one model.")
+        
+    def openDatabasePage(self):
+        # Open a file dialog to select the database file
+        db_file, _ = QFileDialog.getOpenFileName(None, "Select Database File", "", "Database Files (*.db)")
 
-    def get_selected_model(self):
+        if db_file:
+            self.selected_db_file = db_file  # Store the selected file path
+        else:
+            self.selected_db_file = 'image_metadata.db'  # Default to the internal 'image_metadata.db'
+
+        self.redirectToGraphPage(self.main_window)  # Redirect to the graph page
+
+    def redirectToGraphPage(self, MainWindow):
+        self.graph_page_ui = GraphPage()  # Create a new instance of the graph page
+        # Pass the main window and the selected (or default) database file path
+        self.graph_page_ui.setupUi(MainWindow, self.selected_db_file)
+
+    def get_selected_models(self):
         models = []
         if self.YoloV5_CheckBox.isChecked():
             models.append("YoloV5")
@@ -212,35 +259,180 @@ class Ui_BasketballCrowdCounting(object):
         if self.FasterRCheckbox.isChecked():
             models.append("Faster-R-CNN")
         return models if models else None
+    
+# Controller class for handling multiple pages
+class Controller(QtWidgets.QMainWindow):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.selected_models = []
+        self.current_model_index = 0
 
-class Ui_SecondPage(object):
-    def __init__(self, selected_model):
-        self.selected_model = selected_model
+    def startProcessing(self, selected_models):
+        self.selected_models = selected_models
+        self.current_model_index = 0
+        self.showNextModelProcess()
 
-    def setupUi(self, BasketballCrowdCounting):
-        BasketballCrowdCounting.setObjectName("SecondPage")
-        BasketballCrowdCounting.resize(1366, 768)
-        self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
-        self.centralwidget.setObjectName("centralwidget")
+    def showNextModelProcess(self):
+        if self.current_model_index < len(self.selected_models):
+            model_name = self.selected_models[self.current_model_index]
+            if model_name == "YoloV5":
+                self.ui_yolov5 = YOLOv5ProcessingPage(self)
+                self.ui_yolov5.setupUi(self.main_window)
+                self.ui_yolov5.startProcessing()
+            elif model_name == "YoloV8":
+                self.ui_yolov8 = YOLOv8ProcessingPage(self)
+                self.ui_yolov8.setupUi(self.main_window)
+                self.ui_yolov8.startProcessing()
+            elif model_name == "Mask-R-CNN":
+                self.ui_maskrcnn = MaskRCNNProcessingPage(self)
+                self.ui_maskrcnn.setupUi(self.main_window)
+                self.ui_maskrcnn.startProcessing()
+            elif model_name == "Faster-R-CNN":
+                self.ui_fasterrcnn = FasterRCNNProcessingPage(self)
+                self.ui_fasterrcnn.setupUi(self.main_window)
+                self.ui_fasterrcnn.startProcessing()
 
-        # Label for New Page
+            self.current_model_index += 1
+        else:
+            self.showFinishedPage()
+
+    def showFinishedPage(self):
+        self.finished_page = FinishedPage(self.main_window)  # Pass the main window here
+        self.finished_page.setupUi(self.main_window)
+
+class YOLOv5ProcessingPage:
+    def __init__(self,  controller):
+        self.controller = controller
+
+    def setupUi(self, MainWindow):
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(100, 100, 600, 400))
-        self.label.setText(f"Processing with {', '.join(self.selected_model)} model(s)")
+        self.label.setText("Processing YOLOv5...")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        MainWindow.setCentralWidget(self.centralwidget)
+
+    def startProcessing(self):
+        QtCore.QTimer.singleShot(2000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+
+class YOLOv8ProcessingPage:
+    def __init__(self, controller):
+        self.controller = controller
+
+    def setupUi(self, MainWindow):
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(100, 100, 600, 400))
+        self.label.setText("Processing YOLOv8...")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        MainWindow.setCentralWidget(self.centralwidget)
+
+    def startProcessing(self):
+        QtCore.QTimer.singleShot(2000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+
+class MaskRCNNProcessingPage:
+    def __init__(self, controller):
+        self.controller = controller
+
+    def setupUi(self, MainWindow):
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(100, 100, 600, 400))
+        self.label.setText("Processing Mask-RCNN...")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        MainWindow.setCentralWidget(self.centralwidget)
+
+    def startProcessing(self):
+        QtCore.QTimer.singleShot(2000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+
+class FasterRCNNProcessingPage:
+    def __init__(self, controller):
+        self.controller = controller
+
+    def setupUi(self, MainWindow):
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(100, 100, 600, 400))
+        self.label.setText("Processing Faster-RCNN...")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        MainWindow.setCentralWidget(self.centralwidget)
+
+    def startProcessing(self):
+        QtCore.QTimer.singleShot(2000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+
+class FinishedPage:
+    def __init__(self, main_window):
+        self.main_window = main_window  # Store the reference to the main window
+
+    def setupUi(self, MainWindow):
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(100, 100, 600, 400))
+        self.label.setText("Processing Complete!")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
 
-        BasketballCrowdCounting.setCentralWidget(self.centralwidget)
+        # Button to show the graph page
+        self.showGraphButton = QtWidgets.QPushButton("Show Graph", self.centralwidget)
+        self.showGraphButton.setGeometry(QtCore.QRect(200, 500, 200, 50))
+        self.showGraphButton.clicked.connect(lambda: self.showGraphPage(self.main_window))  # Pass the main window
 
-        self.retranslateUi(BasketballCrowdCounting)
-        QtCore.QMetaObject.connectSlotsByName(BasketballCrowdCounting)
+        MainWindow.setCentralWidget(self.centralwidget)
 
-    def retranslateUi(self, BasketballCrowdCounting):
-        _translate = QtCore.QCoreApplication.translate
-        BasketballCrowdCounting.setWindowTitle(_translate("SecondPage", "Processing Page"))
+    def showGraphPage(self, main_window):
+        # Call the GraphPage and pass the main window reference
+        self.graph_page = GraphPage()  # No argument
+        self.graph_page.setupUi(main_window, self.selected_db_file if hasattr(self, 'selected_db_file') else None)
 
-# Main entry point of the application
+class GraphPage:
+    def __init__(self):
+        pass  # No arguments needed
+
+    def setupUi(self, MainWindow, db_file_path=None):
+        MainWindow.setObjectName("GraphPage")
+        MainWindow.resize(1366, 768)
+
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+
+        # Show the selected or default database path
+        if not db_file_path:
+            db_file_path = 'image_metadata.db'
+
+        self.dbPathLabel = QtWidgets.QLabel(self.centralwidget)
+        self.dbPathLabel.setGeometry(QtCore.QRect(100, 50, 600, 50))
+        self.dbPathLabel.setText(f"Database: {db_file_path}")
+        self.dbPathLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Display processed image paths
+        self.processedImagesTable = QtWidgets.QTableView(self.centralwidget)
+        self.processedImagesTable.setGeometry(QtCore.QRect(100, 150, 800, 400))
+        self.loadDatabaseData(db_file_path)
+
+        MainWindow.setCentralWidget(self.centralwidget)
+
+    def loadDatabaseData(self, db_file_path):
+        conn = sqlite3.connect(db_file_path)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT image_path, predict_path FROM image_metadata")
+        rows = cursor.fetchall()
+
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(['Original Image Path', 'Processed Image Path'])
+
+        for row in rows:
+            image_path = row[0]
+            processed_path = row[1]
+            model.appendRow([QStandardItem(image_path), QStandardItem(processed_path)])
+
+        self.processedImagesTable.setModel(model)
+        self.processedImagesTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        conn.close()
+
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     BasketballCrowdCounting = QtWidgets.QMainWindow()
     ui = Ui_BasketballCrowdCounting()
     ui.setupUi(BasketballCrowdCounting)

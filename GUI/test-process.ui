@@ -39,50 +39,73 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2" rowspan="2">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QLabel" name="People_label">
-        <property name="font">
-         <font>
-          <pointsize>20</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>People</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLCDNumber" name="lcd_count">
-        <property name="font">
-         <font>
-          <pointsize>20</pointsize>
-         </font>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
     <item row="1" column="0">
      <widget class="QGraphicsView" name="graphicsView"/>
     </item>
     <item row="1" column="1">
      <widget class="QGraphicsView" name="graphicsView_2"/>
     </item>
-    <item row="2" column="0">
+    <item row="0" column="2" rowspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout"/>
+    </item>
+    <item row="4" column="0">
      <widget class="QLabel" name="Remaining_label">
       <property name="font">
        <font>
-        <pointsize>14</pointsize>
+        <pointsize>20</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>Remaining</string>
+       <string>Time Remaining :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1">
+     <widget class="QPushButton" name="ShowGraphButton">
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Show Graph</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="People_label">
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>People Count :</string>
       </property>
      </widget>
     </item>
     <item row="2" column="1">
+     <widget class="QLCDNumber" name="lcd_count">
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLabel" name="process_text">
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Processing :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="2">
      <widget class="QProgressBar" name="progressBar">
       <property name="font">
        <font>
@@ -100,27 +123,15 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="process_text">
-      <property name="font">
-       <font>
-        <pointsize>16</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Process</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QPushButton" name="ShowGraphButton">
+    <item row="7" column="0">
+     <widget class="QPushButton" name="pushButton">
       <property name="font">
        <font>
         <pointsize>20</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>Show Graph</string>
+       <string>Start Process</string>
       </property>
      </widget>
     </item>
@@ -132,7 +143,7 @@
      <x>0</x>
      <y>0</y>
      <width>1366</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
