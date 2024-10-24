@@ -529,80 +529,99 @@ class ShowGraphProcess(QMainWindow):
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
+        #Setting Main Window
+        MainWindow.setObjectName("Process Image Window")
         MainWindow.resize(1366, 768)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
-        self.Original_label = QtWidgets.QLabel(self.centralwidget)
+
+        #Setting Original Image Label
         font = QtGui.QFont()
-        font.setPointSize(18)
+        font.setPointSize(25)
+        self.Original_label = QtWidgets.QLabel(self.centralwidget)
         self.Original_label.setFont(font)
         self.Original_label.setObjectName("Original_label")
         self.gridLayout.addWidget(self.Original_label, 0, 0, 1, 1)
-        self.Predict_label = QtWidgets.QLabel(self.centralwidget)
+        
+        #Setting Predict Image Label
         font = QtGui.QFont()
-        font.setPointSize(22)
+        font.setPointSize(25)
+        self.Predict_label = QtWidgets.QLabel(self.centralwidget)
         self.Predict_label.setFont(font)
         self.Predict_label.setObjectName("Predict_label")
         self.gridLayout.addWidget(self.Predict_label, 0, 1, 1, 1)
-        self.verticalLayout = QtWidgets.QVBoxLayout()
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.People_label = QtWidgets.QLabel(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.People_label.setFont(font)
-        self.People_label.setObjectName("People_label")
-        self.verticalLayout.addWidget(self.People_label)
-        self.lcd_count = QtWidgets.QLCDNumber(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.lcd_count.setFont(font)
-        self.lcd_count.setObjectName("lcd_count")
-        self.verticalLayout.addWidget(self.lcd_count)
-        self.gridLayout.addLayout(self.verticalLayout, 0, 2, 2, 1)
+
+        #Setting Original Image
         self.graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
         self.graphicsView.setObjectName("graphicsView")
         self.gridLayout.addWidget(self.graphicsView, 1, 0, 1, 1)
+
+        #Setting Predict Image
         self.graphicsView_2 = QtWidgets.QGraphicsView(self.centralwidget)
         self.graphicsView_2.setObjectName("graphicsView_2")
         self.gridLayout.addWidget(self.graphicsView_2, 1, 1, 1, 1)
-        self.Remaining_label = QtWidgets.QLabel(self.centralwidget)
+
+        #Setting People Count Label
         font = QtGui.QFont()
-        font.setPointSize(14)
+        font.setPointSize(20)
+        self.People_label = QtWidgets.QLabel(self.centralwidget)
+        self.People_label.setFont(font)
+        self.People_label.setObjectName("People_label")
+        self.gridLayout.addWidget(self.People_label, 2, 0, 1, 1)
+
+        #Setting Count Number
+        font = QtGui.QFont()
+        font.setPointSize(20)
+        self.lcd_count = QtWidgets.QLCDNumber(self.centralwidget)
+        self.lcd_count.setFont(font)
+        self.lcd_count.setObjectName("lcd_count")
+        self.gridLayout.addWidget(self.lcd_count, 2, 1, 1, 1)
+        
+        #Setting Remaining Label
+        font = QtGui.QFont()
+        font.setPointSize(20)
+        self.Remaining_label = QtWidgets.QLabel(self.centralwidget)
         self.Remaining_label.setFont(font)
         self.Remaining_label.setObjectName("Remaining_label")
-        self.gridLayout.addWidget(self.Remaining_label, 2, 0, 1, 1)
-        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
+        self.gridLayout.addWidget(self.Remaining_label, 3, 0, 1, 1)
+
+        #Setting Progress Image Number Label
         font = QtGui.QFont()
-        font.setPointSize(16)
+        font.setPointSize(20)
+        self.process_text = QtWidgets.QLabel(self.centralwidget)
+        self.process_text.setFont(font)
+        self.process_text.setObjectName("process_text")
+        self.gridLayout.addWidget(self.process_text, 3, 1, 1, 1)
+
+        #Setting Progress Bar
+        font = QtGui.QFont()
+        font.setPointSize(20)
+        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setFont(font)
+        self.progressBar.setObjectName("progressBar")
         self.progressBar.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
         self.progressBar.setProperty("value", 24)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
-        self.progressBar.setObjectName("progressBar")
-        self.gridLayout.addWidget(self.progressBar, 2, 1, 1, 1)
-        self.process_text = QtWidgets.QLabel(self.centralwidget)
-        font = QtGui.QFont()
-        font.setPointSize(16)
-        self.process_text.setFont(font)
-        self.process_text.setObjectName("process_text")
-        self.gridLayout.addWidget(self.process_text, 3, 0, 1, 1)
-        self.ProcessImageButton = QtWidgets.QPushButton(self.centralwidget)
+        self.gridLayout.addWidget(self.progressBar, 4, 0, 1, 2)
+
+        #Setting Process Image Button
         font = QtGui.QFont()
         font.setPointSize(20)
+        self.ProcessImageButton = QtWidgets.QPushButton(self.centralwidget)
         self.ProcessImageButton.setFont(font)
         self.ProcessImageButton.setObjectName("ProcessImageButton")
-        self.gridLayout.addWidget(self.ProcessImageButton, 3, 1, 1, 1)
+        self.gridLayout.addWidget(self.ProcessImageButton, 5, 0, 1, 1)
 
-        self.GraphButton = QtWidgets.QPushButton(self.centralwidget)
+        #Setting Show Graph Button
         font = QtGui.QFont()
         font.setPointSize(20)
+        self.GraphButton = QtWidgets.QPushButton(self.centralwidget)
         self.GraphButton.setFont(font)
         self.GraphButton.setObjectName("GraphButton")
         self.GraphButton.setText("Show Graph Data")
-        self.gridLayout.addWidget(self.GraphButton, 4, 1, 1, 1)
+        self.gridLayout.addWidget(self.GraphButton, 5, 1, 1, 1)
         self.GraphButton.hide()  # ซ่อนปุ่มนี้ไว้ก่อน
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -610,6 +629,7 @@ class Ui_MainWindow(object):
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1366, 26))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
+
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
@@ -630,13 +650,13 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.Remaining_label.setText(_translate("MainWindow", "Remaining"))
-        self.ProcessImageButton.setText(_translate("MainWindow", "Process Image"))
-        self.People_label.setText(_translate("MainWindow", "People"))
-        self.Original_label.setText(_translate("MainWindow", "Original Image"))
-        self.Predict_label.setText(_translate("MainWindow", "Predict Image"))
-        self.process_text.setText(_translate("MainWindow", "Process"))
+        MainWindow.setWindowTitle(_translate("Process Image Window", "Process Image Window"))
+        self.Remaining_label.setText(_translate("Process Image Window", "Time Remaining :"))
+        self.ProcessImageButton.setText(_translate("Process Image Window", "Start Process Image"))
+        self.People_label.setText(_translate("Process Image Window", "People Count : "))
+        self.Original_label.setText(_translate("Process Image Window", "Original Image"))
+        self.Predict_label.setText(_translate("Process Image Window", "Predict Image"))
+        self.process_text.setText(_translate("Process Image Window", "Processing : "))
 
     def processImages(self):
         # Connect to the SQLite database
@@ -713,10 +733,10 @@ class Ui_MainWindow(object):
             # Update GUI with time and progress
             self.lcd_count.display(people_count)  # Show count for the current image
             self.progressBar.setValue(int((index + 1) / total_images * 100))
-            self.process_text.setText(f"Processing {index + 1} of {total_images}...")
+            self.process_text.setText(f"Processing : {index + 1} of {total_images}...")
 
             # Display remaining time in min:ss format
-            self.Remaining_label.setText(f"Time remaining: {remaining_time_str} min")
+            self.Remaining_label.setText(f"Time Remaining : {remaining_time_str} min")
 
             # Display original and predicted images in the GUI
             self.displayImage(image_path, self.graphicsView)
