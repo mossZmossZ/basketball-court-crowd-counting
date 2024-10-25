@@ -295,11 +295,13 @@ class Controller(QtWidgets.QMainWindow):
 
             self.current_model_index += 1
         else:
-            self.showFinishedPage()
+            self.showGraphPage(self.main_window)
 
-    def showFinishedPage(self):
-        self.finished_page = FinishedPage(self.main_window)  # Pass the main window here
-        self.finished_page.setupUi(self.main_window)
+
+    def showGraphPage(self, main_window):
+        # Call the GraphPage and pass the main window reference
+        self.graph_page = GraphPage()  # No argument
+        self.graph_page.setupUi(main_window, self.selected_db_file if hasattr(self, 'selected_db_file') else None)
 
 class YOLOv5ProcessingPage:
     def __init__(self,  controller):
@@ -361,28 +363,6 @@ class FasterRCNNProcessingPage:
     def startProcessing(self):
         QtCore.QTimer.singleShot(2000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
 
-class FinishedPage:
-    def __init__(self, main_window):
-        self.main_window = main_window  # Store the reference to the main window
-
-    def setupUi(self, MainWindow):
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(100, 100, 600, 400))
-        self.label.setText("Processing Complete!")
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-
-        # Button to show the graph page
-        self.showGraphButton = QtWidgets.QPushButton("Show Graph", self.centralwidget)
-        self.showGraphButton.setGeometry(QtCore.QRect(200, 500, 200, 50))
-        self.showGraphButton.clicked.connect(lambda: self.showGraphPage(self.main_window))  # Pass the main window
-
-        MainWindow.setCentralWidget(self.centralwidget)
-
-    def showGraphPage(self, main_window):
-        # Call the GraphPage and pass the main window reference
-        self.graph_page = GraphPage()  # No argument
-        self.graph_page.setupUi(main_window, self.selected_db_file if hasattr(self, 'selected_db_file') else None)
 
 class GraphPage:
     def __init__(self):
