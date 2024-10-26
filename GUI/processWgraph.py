@@ -10,7 +10,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QCheckBox, QGraphicsPixmapItem, QGraphicsScene, QApplication, QMainWindow, QVBoxLayout, QWidget, QCalendarWidget, QPushButton, QMessageBox, QLabel, QHBoxLayout, QSizePolicy, QTableWidget, QTableWidgetItem, QComboBox
 from PyQt5.QtGui import QPixmap, QColor, QFont
 from PyQt5.QtCore import QLocale, Qt, QDate
-from ultralytics import YOLO
 
 # คลาสสำหรับการจัดการกับฐานข้อมูล SQLite
 class DatabaseManager:
@@ -240,11 +239,10 @@ class ShowGraphProcess(QMainWindow):
         self.model_combo_box = CustomComboBox()
         model = [
             "Selected Model",
-            "YoloV5",
-            "YoloV8",
+            "YOLOv5",
+            "YOLOv8",
             "Mask-R-CNN",
-            "Faster-R-CNN",
-            "CSRNet"
+            "Faster-R-CNN"            
         ]
         self.model_combo_box.addItems(model)
         self.model_combo_box.setFixedSize(1100, 40)
