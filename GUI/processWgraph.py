@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QApplication, QMainWindow, QVBoxLayout, QWidget, QCalendarWidget, QPushButton, QMessageBox, QLabel, QHBoxLayout, QSizePolicy, QTableWidget, QTableWidgetItem, QComboBox
+from PyQt5.QtWidgets import QCheckBox, QGraphicsPixmapItem, QGraphicsScene, QApplication, QMainWindow, QVBoxLayout, QWidget, QCalendarWidget, QPushButton, QMessageBox, QLabel, QHBoxLayout, QSizePolicy, QTableWidget, QTableWidgetItem, QComboBox
 from PyQt5.QtGui import QPixmap, QColor, QFont
 from PyQt5.QtCore import QLocale, Qt, QDate
 from ultralytics import YOLO
@@ -54,7 +54,7 @@ class DatabaseManager:
         self.cursor.execute(query)
         return [row[0] for row in self.cursor.fetchall()]
     
-    def fetch_Highest_Month_Data(self, selected_date):
+    def fetch_Highest_Month_Data(self, selected_date, selected_model):
         year_month = selected_date.toString("yyyy-MM")  # Get the year and month as a string
 
         query = f"""
@@ -63,7 +63,7 @@ class DatabaseManager:
             SELECT date, time, people_count,
                 ROW_NUMBER() OVER (PARTITION BY date ORDER BY people_count DESC) AS rn
             FROM image_metadata
-            WHERE strftime('%Y-%m', date) = '{year_month}'  -- Only for the selected month
+            WHERE strftime('%Y-%m', date) = '{year_month}' AND model = '{selected_model}'
         ) AS ranked
         WHERE rn = 1
         """
@@ -94,13 +94,13 @@ class DatabaseManager:
         results = self.cursor.fetchall()  # Fetch all matching records
         return [result[0] for result in results] if results else [] 
     
-    def fetch_predict_image_paths_by_month(self, selected_date):
+    def fetch_predict_image_paths_by_month(self, selected_date, selected_model):
         year_month = selected_date.toString("yyyy-MM")  # Format date to year-month
 
         query = f"""
         SELECT predict_path
         FROM image_metadata
-        WHERE strftime('%Y-%m', date) = '{year_month}'
+        WHERE strftime('%Y-%m', date) = '{year_month}' AND model = '{selected_model}'
         """
 
         self.cursor.execute(query)
@@ -213,27 +213,12 @@ class CustomComboBox(QComboBox):
         super().hidePopup()
         self.setStyleSheet(self.styleSheet() + " QComboBox::down-arrow { image: url(arrow_down.png); }")
 
-
-class HoverButton(QPushButton):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setStyleSheet("background-color: #4CAF50; color: white; border: none; border-radius: 5px; padding: 10px;")
-        self.setCursor(Qt.PointingHandCursor)
-
-    def enterEvent(self, event):
-        self.setStyleSheet("background-color: #45a049; color: white; border: none; border-radius: 5px; padding: 10px;")
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self.setStyleSheet("background-color: #4CAF50; color: white; border: none; border-radius: 5px; padding: 10px;")
-        super().leaveEvent(event)
-
 class ShowGraphProcess(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle('Crown Counting System')
-        self.setGeometry(100, 100, 1700, 1000)
+        self.setGeometry(100, 100, 1366, 768)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -244,10 +229,17 @@ class ShowGraphProcess(QMainWindow):
 
         # Database Manager
         self.db_manager = DatabaseManager()
+        self.image_paths = []  # Initialize to an empty list
+        self.current_image_index = 0
+
+        # Create a horizontal layout for the combo box and checkboxes
+        combo_layout = QHBoxLayout()
+        combo_layout.setSpacing(20)  # Space between items in this layout
 
         # Model Name Combo Box
         self.model_combo_box = CustomComboBox()
         model = [
+            "Selected Model",
             "YoloV5",
             "YoloV8",
             "Mask-R-CNN",
@@ -255,14 +247,16 @@ class ShowGraphProcess(QMainWindow):
             "CSRNet"
         ]
         self.model_combo_box.addItems(model)
+        self.model_combo_box.setFixedSize(1100, 40)
 
-        # Set the size for the combo box
-        self.model_combo_box.setFixedSize(800, 40)
+        self.day_checkbox = QCheckBox("Day (Note : Default is Current Day)")
+        self.month_checkbox = QCheckBox("Month")
 
-        # Create a layout for the combo box and add it to the main layout
-        combo_layout = QHBoxLayout()
-        combo_layout.setContentsMargins(10, 10, 10, 10)
         combo_layout.addWidget(self.model_combo_box)
+        combo_layout.addWidget(self.day_checkbox)
+        combo_layout.addWidget(self.month_checkbox)
+
+        # Add the combo layout to the main layout
         layout.addLayout(combo_layout)
 
         # Custom Calendar Widget
@@ -272,13 +266,6 @@ class ShowGraphProcess(QMainWindow):
         self.calendar.setFixedHeight(350)
 
         layout.addWidget(self.calendar)
-
-        # Button to show graphs
-        self.plot_button = HoverButton('Show Graphs / Re-Graphs')
-        self.plot_button.clicked.connect(self.show_graph_by_seleted_day)
-        self.plot_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        layout.addWidget(self.plot_button)
-
         # Horizontal layout for image, graph, and labels
         self.labels_and_canvas_layout = QHBoxLayout()
 
@@ -309,7 +296,7 @@ class ShowGraphProcess(QMainWindow):
         image_layout.addWidget(self.prev_button)
         image_layout.addWidget(self.next_button)
 
-        self.image_widget.setFixedSize(400, 500)  # Set a fixed size for the image widget
+        self.image_widget.setFixedSize(370, 500)  # Set a fixed size for the image widget
         self.labels_and_canvas_layout.addWidget(self.image_widget)  # Add image widget to layout
 
         # Matplotlib figure and canvas
@@ -354,7 +341,7 @@ class ShowGraphProcess(QMainWindow):
         # Create QTableWidget for displaying records
         self.data_table = QTableWidget()
         self.data_table.setColumnCount(2)
-        self.data_table.setHorizontalHeaderLabels(["Date (Highest each Day)", "People"])
+        self.data_table.setHorizontalHeaderLabels(["Date", "People"])
         self.data_table.setFixedSize(420, 353)
         self.labels_layout.addWidget(self.data_table)
 
@@ -366,114 +353,158 @@ class ShowGraphProcess(QMainWindow):
 
         current_date = QDate.currentDate()
         self.calendar.setCurrentPage(current_date.year(), current_date.month())  # Set the calendar to the current month
-        self.calendar.setSelectedDate(current_date)  # Optionally select today's date
 
         self.central_widget.setLayout(layout)
         self.graph_plotter = GraphPlotter(self.canvas)
 
-        # Load data for the current month
-        self.update_data_based_on_month_change(current_date.year(), current_date.month())
-        
-        self.calendar.currentPageChanged.connect(self.update_data_based_on_month_change)
-
-
-    def update_data_based_on_month_change(self, year, month):
-        # Create a QDate object for the first day of the new month
-        selected_date = QDate(year, month, 1)
-
-        # Fetch and show the graph for the new month
-        self.show_graph_by_month(selected_date)
-
-        # Fetch records for the highest people count
-        records = self.db_manager.fetch_Highest_Month_Data(selected_date)
-        self.populate_table(records, 1)
-
-        # Clear the image paths and reset the current image index
-        self.image_paths = []  # Clear the image paths
-        self.current_image_index = 0  # Reset index
-
-        # Fetch images for the selected month
-        image_paths = self.db_manager.fetch_predict_image_paths_by_month(selected_date)
-
-        # Update the image_paths with the new data
-        self.image_paths = [path[0] for path in image_paths]  # Unwrap tuples
-
-        # Load the first image if available
-        self.load_image()  # Load the first image of the new month
+        self.day_checkbox.toggled.connect(self.on_checkbox_toggled)
+        self.month_checkbox.toggled.connect(self.on_checkbox_toggled)
+        self.model_combo_box.currentIndexChanged.connect(self.on_combobox_changed)
+        self.calendar.selectionChanged.connect(self.show_graph_by_seleted_day) 
+        self.calendar.currentPageChanged.connect(self.show_graph_by_seleted_month)
 
     def load_image(self):
-        if not self.image_paths:
-            print("No images available to load.")
-            return  # Exit early if there are no images
+        if self.model_combo_box.currentText() != "Selected Model":
+            if not self.image_paths:
+                print("No images available to load.")
+                return  # Exit early if there are no images
 
-        if self.current_image_index >= len(self.image_paths):
-            print(f"Index out of range: {self.current_image_index} >= {len(self.image_paths)}")
-            self.current_image_index = len(self.image_paths) - 1  # Reset to last index
-            return  # Exit early since index is out of bounds
+            if self.current_image_index >= len(self.image_paths):
+                print(f"Index out of range: {self.current_image_index} >= {len(self.image_paths)}")
+                self.current_image_index = len(self.image_paths) - 1  # Reset to last index
+                return  # Exit early since index is out of bounds
 
-        print("Loading Image...")
-        pixmap = QPixmap(self.image_paths[self.current_image_index])  # Load the current image
-        self.image_label.setPixmap(pixmap)
-        self.image_label.setScaledContents(True)
+            pixmap = QPixmap(self.image_paths[self.current_image_index])  # Load the current image
+            self.image_label.setPixmap(pixmap)
+            self.image_label.setScaledContents(True)
 
-        current_people_count = self.db_manager.fetch_people_count_by_image_path(self.image_paths[self.current_image_index])
-        self.people_count_label.setText(f"People Count : {current_people_count}")
+            current_people_count = self.db_manager.fetch_people_count_by_image_path(self.image_paths[self.current_image_index])
+            self.people_count_label.setText(f"People Count : {current_people_count}")
 
-        print("Total Images:", len(self.image_paths))
-        self.prev_button.setVisible(self.current_image_index > 0)
-        self.next_button.setVisible(self.current_image_index < len(self.image_paths) - 1)
-
+            self.prev_button.setVisible(self.current_image_index > 0)
+            self.next_button.setVisible(self.current_image_index < len(self.image_paths) - 1)
 
     def show_previous_image(self):
-        if self.image_paths and self.current_image_index > 0:  # Check that we're not at the first image
-            self.current_image_index -= 1  # Decrement index
-            self.load_image()  # Load the previous image
+        if self.model_combo_box.currentText() != "Selected Model":
+            if self.image_paths and self.current_image_index > 0:  # Check that we're not at the first image
+                self.current_image_index -= 1  # Decrement index
+                self.load_image()  # Load the previous image
 
     def show_next_image(self):
-        if self.image_paths and self.current_image_index < len(self.image_paths) - 1:
-            self.current_image_index += 1
-            self.load_image()
+        if self.model_combo_box.currentText() != "Selected Model":
+            if self.image_paths and self.current_image_index < len(self.image_paths) - 1:
+                self.current_image_index += 1
+                self.load_image()
 
     def format_date(self, date_str, time_str):
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
         formatted_date = date_obj.strftime("%B %d %Y at")
         return f"{formatted_date} {time_str}"
     
-    def show_graph_by_month(self, selected_date):
-        monthly_data = self.db_manager.fetch_Highest_Month_Data(selected_date)  # Pass the QDate object
-        if monthly_data:
-            self.graph_plotter.plot_line_chart_by_month(monthly_data)  # Call your plotting function
-            self.graph_plotter.draw()  # Refresh the canvas
-        else:
-            year_month = selected_date.toString("yyyy-MM")
-            QMessageBox.warning(self, "No Data", "No data available for the " + year_month, QMessageBox.Ok)
+    def on_calendar_page_change(self):
+        current_month = self.calendar.selectedDate().month()
+        current_year = self.calendar.selectedDate().year()
+        print(current_month)
+        self.show_graph_by_seleted_month(current_year, current_month)
+    
+    def on_checkbox_toggled(self):
+        if self.sender() is self.day_checkbox and self.day_checkbox.isChecked():
+            self.month_checkbox.setChecked(False)
+            self.show_graph_by_seleted_day()
+        elif self.sender() is self.month_checkbox and self.month_checkbox.isChecked():
+            self.day_checkbox.setChecked(False)
+            current_month = self.calendar.selectedDate().month()
+            current_year = self.calendar.selectedDate().year()
+            self.show_graph_by_seleted_month(current_year, current_month)
+
+    def on_combobox_changed(self):
+        if self.month_checkbox.isChecked():
+            current_month = self.calendar.selectedDate().month()
+            current_year = self.calendar.selectedDate().year()
+            self.show_graph_by_seleted_month(current_year, current_month)
+        elif self.day_checkbox.isChecked():
+            self.show_graph_by_seleted_day()
+    
+    def show_graph_by_seleted_month(self, year, month):
+        selected_date = QDate(year, month, 1)
+        print(year)
+        print(month)
+        selected_model = self.model_combo_box.currentText()
+        if selected_model != "Selected Model" and self.month_checkbox.isChecked():
+            monthly_data = self.db_manager.fetch_Highest_Month_Data(selected_date, selected_model)  # Pass the QDate object
+            if monthly_data:
+                self.next_button.setEnabled(True)
+                self.prev_button.setEnabled(True)
+                self.graph_plotter.plot_line_chart_by_month(monthly_data)  # Call your plotting function
+                self.graph_plotter.draw()
+
+                # Clear the image paths and reset the current image index
+                self.image_paths = []  # Clear the image paths
+                self.current_image_index = 0  # Reset index
+
+                # Fetch images for the selected month
+                image_paths = self.db_manager.fetch_predict_image_paths_by_month(selected_date, selected_model)
+
+                # Update the image_paths with the new data
+                self.image_paths = [path[0] for path in image_paths]  # Unwrap tuples
+
+                # Load the first image if available
+                self.load_image()  # Load the first image of the new month
+                # Fetch records for the highest people count
+                records = self.db_manager.fetch_Highest_Month_Data(selected_date, selected_model)
+                self.data_table.setHorizontalHeaderLabels(["Date (Highest each day)", "People"])
+                self.populate_table(records, 1)
+            else:
+                self.next_button.setEnabled(False)
+                self.prev_button.setEnabled(False)
+                self.graph_plotter.plot_line_chart_by_month([])
+                self.graph_plotter.draw()
+                self.people_count_label.setText(f"People Count : 0")
+                pixmap = QPixmap("default_image.png")
+                self.image_label.setPixmap(pixmap)
+                year_month = selected_date.toString("yyyy-MM")
+                self.number_of_people_value.setText(str(0))
+                self.populate_table([],1)
+                QMessageBox.warning(self, "No Data", "No data for model " + selected_model+ " available for the " + year_month, QMessageBox.Ok)
 
     def show_graph_by_seleted_day(self):
         selected_date = self.calendar.selectedDate().toString("yyyy-MM-dd")
         selected_model = self.model_combo_box.currentText()
 
-        # Fetch line chart data for the selected date
-        line_chart_data = self.db_manager.Line_Chart_fetch_data_by_date(selected_date, selected_model)
+        if selected_model != "Selected Model" and self.day_checkbox.isChecked():
+            # Fetch line chart data for the selected date
+            line_chart_data = self.db_manager.Line_Chart_fetch_data_by_date(selected_date, selected_model)
 
-        # Fetch all image paths for the selected date
-        self.image_paths = self.db_manager.fetch_predict_image_paths_by_date(selected_date, selected_model)
+            # Fetch all image paths for the selected date
+            self.image_paths = self.db_manager.fetch_predict_image_paths_by_date(selected_date, selected_model)
 
-        if line_chart_data:
-            self.graph_plotter.plot_line_chart_by_day(line_chart_data)
-            self.graph_plotter.draw()
+            if line_chart_data:
+                self.next_button.setEnabled(True)
+                self.prev_button.setEnabled(True)
+                self.graph_plotter.plot_line_chart_by_day(line_chart_data)
+                self.graph_plotter.draw()
 
-            # Populate the table with data
-            records = self.db_manager.fetch_data_by_date(selected_date, selected_model)
-            self.populate_table(records, 0)
+                # Populate the table with data
+                records = self.db_manager.fetch_data_by_date(selected_date, selected_model)
+                self.populate_table(records, 0)
 
-            self.data_table.setHorizontalHeaderLabels(["Date (Peak Time)", "People"])
+                self.data_table.setHorizontalHeaderLabels(["Date (Peak Time)", "People"])
 
-            # Load the first image
-            self.load_image()
-        else:
-            QMessageBox.warning(self, "Caution", f"No data available for the model '{selected_model}' on date: {selected_date}.", QMessageBox.Ok)
+                # Load the first image
+                self.load_image()
+            else:
+                self.next_button.setEnabled(False)
+                self.prev_button.setEnabled(False)
+                self.graph_plotter.plot_line_chart_by_month([])
+                self.graph_plotter.draw()
+                self.people_count_label.setText(f"People Count : 0")
+                pixmap = QPixmap("default_image.png")
+                self.image_label.setPixmap(pixmap)
+                self.number_of_people_value.setText(str(0))
+                self.populate_table([],0)
+                QMessageBox.warning(self, "Caution", f"No data available for the model '{selected_model}' on date: {selected_date}.", QMessageBox.Ok)
 
-        self.current_image_index = 0  # Reset to the first image
+            self.current_image_index = 0  # Reset to the first image
             
     def populate_table(self, records, status):
         if status == 0:
@@ -527,253 +558,23 @@ class ShowGraphProcess(QMainWindow):
         self.db_manager.close()
         event.accept()
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        #Setting Main Window
-        MainWindow.setObjectName("Process Image Window")
-        MainWindow.resize(1366, 768)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName("gridLayout")
-
-        #Setting Original Image Label
-        font = QtGui.QFont()
-        font.setPointSize(25)
-        self.Original_label = QtWidgets.QLabel(self.centralwidget)
-        self.Original_label.setFont(font)
-        self.Original_label.setObjectName("Original_label")
-        self.gridLayout.addWidget(self.Original_label, 0, 0, 1, 1)
-        
-        #Setting Predict Image Label
-        font = QtGui.QFont()
-        font.setPointSize(25)
-        self.Predict_label = QtWidgets.QLabel(self.centralwidget)
-        self.Predict_label.setFont(font)
-        self.Predict_label.setObjectName("Predict_label")
-        self.gridLayout.addWidget(self.Predict_label, 0, 1, 1, 1)
-
-        #Setting Original Image
-        self.graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
-        self.graphicsView.setObjectName("graphicsView")
-        self.gridLayout.addWidget(self.graphicsView, 1, 0, 1, 1)
-
-        #Setting Predict Image
-        self.graphicsView_2 = QtWidgets.QGraphicsView(self.centralwidget)
-        self.graphicsView_2.setObjectName("graphicsView_2")
-        self.gridLayout.addWidget(self.graphicsView_2, 1, 1, 1, 1)
-
-        #Setting People Count Label
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.People_label = QtWidgets.QLabel(self.centralwidget)
-        self.People_label.setFont(font)
-        self.People_label.setObjectName("People_label")
-        self.gridLayout.addWidget(self.People_label, 2, 0, 1, 1)
-
-        #Setting Count Number
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.lcd_count = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcd_count.setFont(font)
-        self.lcd_count.setObjectName("lcd_count")
-        self.gridLayout.addWidget(self.lcd_count, 2, 1, 1, 1)
-        
-        #Setting Remaining Label
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.Remaining_label = QtWidgets.QLabel(self.centralwidget)
-        self.Remaining_label.setFont(font)
-        self.Remaining_label.setObjectName("Remaining_label")
-        self.gridLayout.addWidget(self.Remaining_label, 3, 0, 1, 1)
-
-        #Setting Progress Image Number Label
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.process_text = QtWidgets.QLabel(self.centralwidget)
-        self.process_text.setFont(font)
-        self.process_text.setObjectName("process_text")
-        self.gridLayout.addWidget(self.process_text, 3, 1, 1, 1)
-
-        #Setting Progress Bar
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
-        self.progressBar.setFont(font)
-        self.progressBar.setObjectName("progressBar")
-        self.progressBar.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedStates))
-        self.progressBar.setProperty("value", 24)
-        self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
-        self.gridLayout.addWidget(self.progressBar, 4, 0, 1, 2)
-
-        #Setting Process Image Button
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.ProcessImageButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ProcessImageButton.setFont(font)
-        self.ProcessImageButton.setObjectName("ProcessImageButton")
-        self.gridLayout.addWidget(self.ProcessImageButton, 5, 0, 1, 1)
-
-        #Setting Show Graph Button
-        font = QtGui.QFont()
-        font.setPointSize(20)
-        self.GraphButton = QtWidgets.QPushButton(self.centralwidget)
-        self.GraphButton.setFont(font)
-        self.GraphButton.setObjectName("GraphButton")
-        self.GraphButton.setText("Show Graph Data")
-        self.gridLayout.addWidget(self.GraphButton, 5, 1, 1, 1)
-        self.GraphButton.hide()  # ซ่อนปุ่มนี้ไว้ก่อน
-
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1366, 26))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-        # Set up the model for YOLOv8
-        self.model = YOLO('yolov8x.pt')
-
-        # Connect the button for starting the process
-        self.ProcessImageButton.clicked.connect(self.processImages)
-        self.GraphButton.clicked.connect(self.run_app)
-
-    def run_app(self):
-        self.graph_window = ShowGraphProcess()  # Create a new instance of the graph window
-        self.graph_window.show()
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("Process Image Window", "Process Image Window"))
-        self.Remaining_label.setText(_translate("Process Image Window", "Time Remaining :"))
-        self.ProcessImageButton.setText(_translate("Process Image Window", "Start Process Image"))
-        self.People_label.setText(_translate("Process Image Window", "People Count : "))
-        self.Original_label.setText(_translate("Process Image Window", "Original Image"))
-        self.Predict_label.setText(_translate("Process Image Window", "Predict Image"))
-        self.process_text.setText(_translate("Process Image Window", "Processing : "))
-
-    def processImages(self):
-        # Connect to the SQLite database
-        conn = sqlite3.connect('image_metadata.db')
-        cursor = conn.cursor()
-
-        # Select all images from the database
-        cursor.execute("SELECT id, image_path FROM image_metadata WHERE predict_path IS NULL")
-        images = cursor.fetchall()
-
-        total_images = len(images)
-        if total_images == 0:
-            self.process_text.setText("No images to process.")
-            return
-
-        # Create output folder if not exists
-        output_folder = os.path.join(os.getcwd(), 'PredictIMG/yolo')
-        os.makedirs(output_folder, exist_ok=True)
-
-        # Variables to track time
-        start_time = time.time()  # Start time of the entire process
-        times_per_image = []
-
-        # Loop through each image in the database
-        for index, (image_id, image_path) in enumerate(images):
-            # Start timer for processing one image
-            image_start_time = time.time()
-
-            # Load the image
-            image = cv2.imread(image_path)
-            if image is None:
-                print(f"Error: Unable to open image at {image_path}. Skipping this file.")
-                continue
-
-            # Perform prediction using YOLO
-            results = self.model(image)
-
-            # Get bounding boxes and labels
-            people_count = 0
-            for result in results:
-                boxes = result.boxes
-                for box in boxes:
-                    if box.cls == 0:  # 'person' class ID
-                        people_count += 1
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        # Increase the thickness of the bounding box
-                        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 4)  # Adjust thickness here (4)
-
-            # Save the predicted image
-            predict_image_path = os.path.join(output_folder, f"predict_{os.path.basename(image_path)}")
-            cv2.imwrite(predict_image_path, image)
-
-            # Update the database with the prediction results
-            cursor.execute('''
-                UPDATE image_metadata
-                SET people_count = ?, predict_path = ?
-                WHERE id = ?
-            ''', (people_count, predict_image_path, image_id))
-            conn.commit()
-
-            # Stop timer for this image and calculate the time taken
-            image_end_time = time.time()
-            time_for_image = image_end_time - image_start_time
-            times_per_image.append(time_for_image)  # Store the time for this image
-
-            # Estimate remaining time
-            avg_time_per_image = sum(times_per_image) / len(times_per_image)
-            remaining_time = avg_time_per_image * (total_images - (index + 1))
-
-            # Convert remaining time to min:ss format
-            remaining_min, remaining_sec = divmod(int(remaining_time), 60)
-            remaining_time_str = f"{remaining_min}:{remaining_sec:02d}"
-
-            # Update GUI with time and progress
-            self.lcd_count.display(people_count)  # Show count for the current image
-            self.progressBar.setValue(int((index + 1) / total_images * 100))
-            self.process_text.setText(f"Processing : {index + 1} of {total_images}...")
-
-            # Display remaining time in min:ss format
-            self.Remaining_label.setText(f"Time Remaining : {remaining_time_str} min")
-
-            # Display original and predicted images in the GUI
-            self.displayImage(image_path, self.graphicsView)
-            self.displayImage(predict_image_path, self.graphicsView_2)
-
-        # Total time taken for the process
-        total_time = time.time() - start_time
-
-        # Convert total time to min:ss format
-        total_min, total_sec = divmod(int(total_time), 60)
-        total_time_str = f"{total_min}:{total_sec:02d}"
-
-        self.GraphButton.show()
-        self.process_text.setText(f"Process completed in {total_time_str} min")
-        conn.close()
-
-
-    def displayImage(self, img_path, graphicsView):
-        scene = QGraphicsScene()
-        pixmap = QPixmap(img_path)
-        
-        # Set the image to fill the entire view while maintaining aspect ratio
-        item = QGraphicsPixmapItem(pixmap)
-        scene.addItem(item)
-        graphicsView.setScene(scene)
-        
-        # Ensures that the image fills the QGraphicsView area without leaving empty space
-        graphicsView.fitInView(item, QtCore.Qt.KeepAspectRatioByExpanding)
-        graphicsView.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
-
-
-
 # The following would go in your main app execution logic
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+    # import sqlite3
+
+    # db_name = 'image_metadata.db'
+    # conn = sqlite3.connect(db_name)
+    # cursor = conn.cursor()
+
+    # cursor.execute("UPDATE image_metadata SET model = 'Mask-R-CNN' WHERE date = '2024-09-16';")
+   
+
+    # conn.commit()
+    # conn.close()
+    app = QApplication(sys.argv)
+    window = ShowGraphProcess()
+    window.show()
     sys.exit(app.exec_())
+
+
+    
