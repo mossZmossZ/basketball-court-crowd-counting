@@ -238,7 +238,6 @@ class ShowGraphProcess(QMainWindow):
         # Model Name Combo Box
         self.model_combo_box = CustomComboBox()
         model = [
-            "Selected Model",
             "YOLOv5",
             "YOLOv8",
             "Mask-R-CNN",
@@ -351,9 +350,13 @@ class ShowGraphProcess(QMainWindow):
 
         current_date = QDate.currentDate()
         self.calendar.setCurrentPage(current_date.year(), current_date.month())  # Set the calendar to the current month
+        self.calendar.setSelectedDate(current_date)
 
         self.central_widget.setLayout(layout)
         self.graph_plotter = GraphPlotter(self.canvas)
+
+        self.month_checkbox.setChecked(True)  # Set the month checkbox to checked
+        self.on_calendar_page_change()
 
         self.day_checkbox.toggled.connect(self.on_checkbox_toggled)
         self.month_checkbox.toggled.connect(self.on_checkbox_toggled)
@@ -362,37 +365,34 @@ class ShowGraphProcess(QMainWindow):
         self.calendar.currentPageChanged.connect(self.show_graph_by_seleted_month)
 
     def load_image(self):
-        if self.model_combo_box.currentText() != "Selected Model":
-            if not self.image_paths:
-                print("No images available to load.")
-                return  # Exit early if there are no images
+        if not self.image_paths:
+            print("No images available to load.")
+            return  # Exit early if there are no images
 
-            if self.current_image_index >= len(self.image_paths):
-                print(f"Index out of range: {self.current_image_index} >= {len(self.image_paths)}")
-                self.current_image_index = len(self.image_paths) - 1  # Reset to last index
-                return  # Exit early since index is out of bounds
+        if self.current_image_index >= len(self.image_paths):
+            print(f"Index out of range: {self.current_image_index} >= {len(self.image_paths)}")
+            self.current_image_index = len(self.image_paths) - 1  # Reset to last index
+            return  # Exit early since index is out of bounds
 
-            pixmap = QPixmap(self.image_paths[self.current_image_index])  # Load the current image
-            self.image_label.setPixmap(pixmap)
-            self.image_label.setScaledContents(True)
+        pixmap = QPixmap(self.image_paths[self.current_image_index])  # Load the current image
+        self.image_label.setPixmap(pixmap)
+        self.image_label.setScaledContents(True)
 
-            current_people_count = self.db_manager.fetch_people_count_by_image_path(self.image_paths[self.current_image_index])
-            self.people_count_label.setText(f"People Count : {current_people_count}")
+        current_people_count = self.db_manager.fetch_people_count_by_image_path(self.image_paths[self.current_image_index])
+        self.people_count_label.setText(f"People Count : {current_people_count}")
 
-            self.prev_button.setVisible(self.current_image_index > 0)
-            self.next_button.setVisible(self.current_image_index < len(self.image_paths) - 1)
+        self.prev_button.setVisible(self.current_image_index > 0)
+        self.next_button.setVisible(self.current_image_index < len(self.image_paths) - 1)
 
     def show_previous_image(self):
-        if self.model_combo_box.currentText() != "Selected Model":
-            if self.image_paths and self.current_image_index > 0:  # Check that we're not at the first image
-                self.current_image_index -= 1  # Decrement index
-                self.load_image()  # Load the previous image
+        if self.image_paths and self.current_image_index > 0:  # Check that we're not at the first image
+            self.current_image_index -= 1  # Decrement index
+            self.load_image()  # Load the previous image
 
     def show_next_image(self):
-        if self.model_combo_box.currentText() != "Selected Model":
-            if self.image_paths and self.current_image_index < len(self.image_paths) - 1:
-                self.current_image_index += 1
-                self.load_image()
+        if self.image_paths and self.current_image_index < len(self.image_paths) - 1:
+            self.current_image_index += 1
+            self.load_image()
 
     def format_date(self, date_str, time_str):
         date_obj = datetime.strptime(date_str, "%Y-%m-%d")
@@ -402,7 +402,6 @@ class ShowGraphProcess(QMainWindow):
     def on_calendar_page_change(self):
         current_month = self.calendar.selectedDate().month()
         current_year = self.calendar.selectedDate().year()
-        print(current_month)
         self.show_graph_by_seleted_month(current_year, current_month)
     
     def on_checkbox_toggled(self):
@@ -425,10 +424,11 @@ class ShowGraphProcess(QMainWindow):
     
     def show_graph_by_seleted_month(self, year, month):
         selected_date = QDate(year, month, 1)
-        print(year)
-        print(month)
         selected_model = self.model_combo_box.currentText()
-        if selected_model != "Selected Model" and self.month_checkbox.isChecked():
+        print(selected_model)
+        print(f"Month Checkbox Checked: {self.month_checkbox.isChecked()}")
+        if self.month_checkbox.isChecked():
+            print("In 1")
             monthly_data = self.db_manager.fetch_Highest_Month_Data(selected_date, selected_model)  # Pass the QDate object
             if monthly_data:
                 self.next_button.setEnabled(True)
@@ -469,7 +469,7 @@ class ShowGraphProcess(QMainWindow):
         selected_date = self.calendar.selectedDate().toString("yyyy-MM-dd")
         selected_model = self.model_combo_box.currentText()
 
-        if selected_model != "Selected Model" and self.day_checkbox.isChecked():
+        if self.day_checkbox.isChecked():
             # Fetch line chart data for the selected date
             line_chart_data = self.db_manager.Line_Chart_fetch_data_by_date(selected_date, selected_model)
 
