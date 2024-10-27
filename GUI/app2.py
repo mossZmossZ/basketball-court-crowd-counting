@@ -3,6 +3,7 @@ import sqlite3
 import sys
 import cv2
 import time
+import math
 import numpy as np
 import torch
 import torchvision
@@ -1964,11 +1965,12 @@ class GraphPage(QMainWindow):
             # Set specific widths for columns
             if length_records > 0:
                 average_number_of_people = total_people_count / length_records
+                average_number_of_people = math.ceil(average_number_of_people)
             else:
                 average_number_of_people = 0
 
             self.number_of_people_title.setText("Average Number of People (Selected Day)")
-            self.number_of_people_value.setText(f"{average_number_of_people:.2f}")
+            self.number_of_people_value.setText(f"{average_number_of_people:.0f}")
             
             self.data_table.setColumnWidth(0, 260) 
         elif status == 1:
@@ -1992,11 +1994,12 @@ class GraphPage(QMainWindow):
 
             if length_records > 0:
                 average_number_of_people = total_people_count / length_records
+                average_number_of_people = math.ceil(average_number_of_people)
             else:
                 average_number_of_people = 0
 
             self.number_of_people_title.setText("Average Number of People (In Month)")
-            self.number_of_people_value.setText(f"{average_number_of_people:.2f}")
+            self.number_of_people_value.setText(f"{average_number_of_people:.0f}")
 
             # Set specific widths for columns
             self.data_table.setColumnWidth(0, 260)
