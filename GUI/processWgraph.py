@@ -13,7 +13,7 @@ from PyQt5.QtCore import QLocale, Qt, QDate
 
 # คลาสสำหรับการจัดการกับฐานข้อมูล SQLite
 class DatabaseManager:
-    def __init__(self, db_name='image_metadata.db'):
+    def __init__(self, db_name='C:/Users/Nattavee/Desktop/GITHUB/basketball-court-crowd-counting/GUI/image_metadata.db'):
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
         self.create_table()
