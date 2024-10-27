@@ -13,7 +13,8 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QTableView, QHeaderView, 
 from PyQt5.QtWidgets import QCheckBox, QMainWindow, QVBoxLayout, QWidget, QCalendarWidget, QPushButton, QLabel, QHBoxLayout, QSizePolicy, QTableWidget, QTableWidgetItem, QComboBox
 from PyQt5.QtGui import QStandardItemModel, QStandardItem , QPixmap , QColor, QFont
 from PyQt5.QtCore import Qt , pyqtSignal,QLocale, Qt, QDate
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ExifTags
+from PIL.ImageQt import ImageQt
 from PIL.ExifTags import TAGS
 from ultralytics import YOLO
 from torchvision import models, transforms
@@ -607,7 +608,7 @@ class WorkerYoloV5(QtCore.QObject):
 
     def __init__(self):
         super().__init__()
-        self.model = YOLO('yolov5x.pt')
+        self.model = YOLO('yolov5xu.pt')
         self.total_images = 0  # Initialize the total_images variable
 
     @QtCore.pyqtSlot()
@@ -644,10 +645,32 @@ class WorkerYoloV5(QtCore.QObject):
         for index, (image_id, image_path) in enumerate(images):
             image_start_time = time.time()
 
-            # Load the image
-            image = cv2.imread(image_path)
-            if image is None:
-                print(f"Error: Unable to open image at {image_path}. Skipping this file.")
+            # Load the original image with Pillow to retain the correct orientation
+            try:
+                # Open the image with Pillow to handle orientation
+                image_pil = Image.open(image_path)
+
+                # Apply any EXIF orientation if present
+                for orientation in ExifTags.TAGS.keys():
+                    if ExifTags.TAGS[orientation] == 'Orientation':
+                        break
+
+                if image_pil._getexif() is not None and orientation in image_pil._getexif():
+                    exif_orientation = image_pil._getexif().get(orientation)
+                    if exif_orientation == 3:
+                        image_pil = image_pil.rotate(180, expand=True)
+                    elif exif_orientation == 6:
+                        image_pil = image_pil.rotate(270, expand=True)
+                    elif exif_orientation == 8:
+                        image_pil = image_pil.rotate(90, expand=True)
+
+                # Resize the image to 640x640 for YOLOv5 compatibility
+                image_pil = image_pil.convert("RGB")  # Ensure it's in RGB format
+                image_pil = image_pil.resize((640, 640))  # Resize to 640x640
+                image = np.array(image_pil)  # Convert to numpy array for OpenCV
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Convert to BGR for OpenCV compatibility
+            except Exception as e:
+                print(f"Error: Unable to open image at {image_path}. Skipping this file. Error: {e}")
                 continue
 
             # Perform prediction using YOLO
@@ -663,7 +686,7 @@ class WorkerYoloV5(QtCore.QObject):
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 4)
 
-            # Save the predicted image
+            # Save the predicted image without additional rotation correction
             predict_image_path = os.path.join(output_folder, f"predict_{os.path.basename(image_path)}")
             cv2.imwrite(predict_image_path, image)
 
@@ -1117,7 +1140,7 @@ class YOLOv5ProcessingPage:
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.Original_label.setText(_translate("MainWindow", "Original Image"))
-        self.Predict_label.setText(_translate("MainWindow", "YoloV5Predict Image"))
+        self.Predict_label.setText(_translate("MainWindow", "YoloV5 Predict Image"))
         self.People_label.setText(_translate("MainWindow", "People Count :"))
         self.Remaining_label.setText(_translate("MainWindow", "Time Remaining :"))
         self.process_text.setText(_translate("MainWindow", "Processing :"))
@@ -1152,8 +1175,18 @@ class YOLOv5ProcessingPage:
         self.displayImage(predict_image_path, self.graphicsView_2)  # Display predicted image
 
     def displayImage(self, img_path, graphicsView):
+        # Load and correct the orientation of the image
+        original_image = Image.open(img_path)
+        original_image = ImageOps.exif_transpose(original_image)  # Correct orientation
+
+        # Convert to QPixmap for display in PyQt5
+        img_data = original_image.convert("RGB")
+        data = img_data.tobytes("raw", "RGB")
+        qimage = QtGui.QImage(data, img_data.width, img_data.height, QtGui.QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qimage)
+
+        # Display the corrected image in the QGraphicsView
         scene = QGraphicsScene()
-        pixmap = QPixmap(img_path)
         item = QGraphicsPixmapItem(pixmap)
         scene.addItem(item)
         graphicsView.setScene(scene)
@@ -1293,8 +1326,18 @@ class YOLOv8ProcessingPage:
         self.displayImage(predict_image_path, self.graphicsView_2)  # Display predicted image
 
     def displayImage(self, img_path, graphicsView):
+        # Load and correct the orientation of the image
+        original_image = Image.open(img_path)
+        original_image = ImageOps.exif_transpose(original_image)  # Correct orientation
+
+        # Convert to QPixmap for display in PyQt5
+        img_data = original_image.convert("RGB")
+        data = img_data.tobytes("raw", "RGB")
+        qimage = QtGui.QImage(data, img_data.width, img_data.height, QtGui.QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qimage)
+
+        # Display the corrected image in the QGraphicsView
         scene = QGraphicsScene()
-        pixmap = QPixmap(img_path)
         item = QGraphicsPixmapItem(pixmap)
         scene.addItem(item)
         graphicsView.setScene(scene)
