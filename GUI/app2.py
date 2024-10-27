@@ -1155,7 +1155,7 @@ class YOLOv5ProcessingPage:
     def showCompletionMessage(self, message):
         self.process_text.setText(message)
         self.thread.quit()
-        QtCore.QTimer.singleShot(1000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+        QtCore.QTimer.singleShot(5000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
 
 
     def updateProgress(self, progress, original_path, predict_image_path, people_count, remaining_time_str):
@@ -1307,7 +1307,7 @@ class YOLOv8ProcessingPage:
     def showCompletionMessage(self, message):
         self.process_text.setText(message)
         self.thread.quit()
-        QtCore.QTimer.singleShot(1000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+        QtCore.QTimer.singleShot(5000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
 
     def updateProgress(self, progress, original_path, predict_image_path, people_count, remaining_time_str):
         # Update progress bar, people count, and display images
@@ -1477,7 +1477,7 @@ class MaskRCNNProcessingPage:
     def showCompletionMessage(self, message):
         self.process_text.setText(message)
         self.thread.quit()
-        QtCore.QTimer.singleShot(1000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+        QtCore.QTimer.singleShot(5000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
 
     def displayImage(self, img_path, graphicsView):
         # Load and correct the orientation of the image
@@ -1627,7 +1627,7 @@ class FasterRCNNProcessingPage:
     def showCompletionMessage(self, message):
         self.process_text.setText(message)
         self.thread.quit()
-        QtCore.QTimer.singleShot(1000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
+        QtCore.QTimer.singleShot(5000, self.controller.showNextModelProcess)  # Simulate 2 seconds processing
 
     def displayImage(self, img_path, graphicsView):
         # Load and correct the orientation of the image
