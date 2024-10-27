@@ -14,7 +14,6 @@ from PyQt5.QtWidgets import QCheckBox, QMainWindow, QVBoxLayout, QWidget, QCalen
 from PyQt5.QtGui import QStandardItemModel, QStandardItem , QPixmap , QColor, QFont
 from PyQt5.QtCore import Qt , pyqtSignal,QLocale, Qt, QDate
 from PIL import Image, ImageOps, ExifTags
-from PIL.ImageQt import ImageQt
 from PIL.ExifTags import TAGS
 from ultralytics import YOLO
 from torchvision import models, transforms
@@ -82,11 +81,11 @@ class DatabaseManager:
 
     def fetch_data_by_date(self, date, model):
         query = """
-        SELECT date, time, people_count
+        SELECT date, time, MAX(people_count) AS total_count
         FROM image_metadata
         WHERE date = ? AND model = ?
-        ORDER BY people_count DESC
-        LIMIT 1
+        GROUP BY time
+        ORDER BY total_count DESC
         """
         self.cursor.execute(query, (date, model))
         return self.cursor.fetchall()
@@ -138,21 +137,22 @@ class GraphPlotter:
         self.canvas = canvas
 
     def plot_line_chart_by_day(self, data):
-        # Clear any existing axes
+         # Clear any existing axes
         self.canvas.figure.clear()
-        
+            
         # Create a new subplot for the line chart
         ax = self.canvas.figure.add_subplot(1, 1, 1)  # Single subplot
-        
-        categories = list(data.keys())
-        values = list(data.values())
-
-        # Line chart
-        ax.plot(categories, values, marker='o')
         ax.set_title('People Count Over Day')
         ax.set_xlabel('Time')
         ax.set_ylabel('People Count')
         ax.grid(True)
+        
+        if data:
+            categories = list(data.keys())
+            values = list(data.values())
+            ax.plot(categories, values, marker='o')
+
+            
 
     def plot_line_chart_by_month(self, data):
         dates = [row[0] for row in data]  # Extract dates
@@ -163,6 +163,7 @@ class GraphPlotter:
         plt.xlabel('Date')
         plt.ylabel('People Count')
         plt.title('People Count Over Month')
+        plt.grid(True)
 
     def draw(self):
         self.canvas.draw()
@@ -1862,10 +1863,7 @@ class GraphPage(QMainWindow):
     def show_graph_by_seleted_month(self, year, month):
         selected_date = QDate(year, month, 1)
         selected_model = self.model_combo_box.currentText()
-        print(selected_model)
-        print(f"Month Checkbox Checked: {self.month_checkbox.isChecked()}")
         if self.month_checkbox.isChecked():
-            print("In 1")
             monthly_data = self.db_manager.fetch_Highest_Month_Data(selected_date, selected_model)  # Pass the QDate object
             if monthly_data:
                 self.next_button.setEnabled(True)
@@ -1923,27 +1921,31 @@ class GraphPage(QMainWindow):
                 records = self.db_manager.fetch_data_by_date(selected_date, selected_model)
                 self.populate_table(records, 0)
 
-                self.data_table.setHorizontalHeaderLabels(["Date (Peak Time)", "People"])
+                self.data_table.setHorizontalHeaderLabels(["Date (Each Time)", "People"])
 
                 # Load the first image
                 self.load_image()
             else:
                 self.next_button.setEnabled(False)
                 self.prev_button.setEnabled(False)
-                self.graph_plotter.plot_line_chart_by_month([])
+                print("1")
+                self.graph_plotter.plot_line_chart_by_day([])
                 self.graph_plotter.draw()
+                print("2")
                 self.people_count_label.setText(f"People Count : 0")
                 pixmap = QPixmap("default_image.png")
                 self.image_label.setPixmap(pixmap)
                 self.number_of_people_value.setText(str(0))
                 self.populate_table([],0)
                 QMessageBox.warning(self, "Caution", f"No data available for the model '{selected_model}' on date: {selected_date}.", QMessageBox.Ok)
-
+    
             self.current_image_index = 0  # Reset to the first image
             
     def populate_table(self, records, status):
+        total_people_count = 0
         if status == 0:
             self.data_table.setRowCount(len(records))  # Set the number of rows based on records
+            length_records = len(records)
             for row_index, record in enumerate(records):
                 date = record[0]
                 time = record[1]  
@@ -1951,10 +1953,8 @@ class GraphPage(QMainWindow):
 
                 formatted_date = self.format_date(date, time)
                 self.data_table.setItem(row_index, 0, QTableWidgetItem(formatted_date))  # Set date in column 0
-
-                self.number_of_people_title.setText("Number of People (Selected Day)")
-                self.number_of_people_value.setText(str(people_count))
-
+                
+                total_people_count += people_count
 
                 # Set the people count
                 people_item = QTableWidgetItem(str(people_count))  # Create the item for people count
@@ -1962,10 +1962,17 @@ class GraphPage(QMainWindow):
                 self.data_table.setItem(row_index, 1, people_item)  # Set the centered item in column 1
 
             # Set specific widths for columns
+            if length_records > 0:
+                average_number_of_people = total_people_count / length_records
+            else:
+                average_number_of_people = 0
+
+            self.number_of_people_title.setText("Average Number of People (Selected Day)")
+            self.number_of_people_value.setText(f"{average_number_of_people:.2f}")
+            
             self.data_table.setColumnWidth(0, 260) 
         elif status == 1:
-            self.data_table.setRowCount(len(records))  # Set the number of rows based on records
-            total_people_count = 0  # Initialize total count
+            self.data_table.setRowCount(len(records))  # Set the number of rows based on records 
             length_records = len(records)
             for row_index, record in enumerate(records):
 
@@ -1988,8 +1995,8 @@ class GraphPage(QMainWindow):
             else:
                 average_number_of_people = 0
 
-            self.number_of_people_title.setText("Average number of People (In Month)")
-            self.number_of_people_value.setText(str(average_number_of_people))
+            self.number_of_people_title.setText("Average Number of People (In Month)")
+            self.number_of_people_value.setText(f"{average_number_of_people:.2f}")
 
             # Set specific widths for columns
             self.data_table.setColumnWidth(0, 260)
