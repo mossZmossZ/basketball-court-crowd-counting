@@ -732,6 +732,7 @@ class WorkerYoloV5(QtCore.QObject):
 class Ui_BasketballCrowdCounting(object):
     def setupUi(self, BasketballCrowdCounting):
         self.main_window = BasketballCrowdCounting  # Store the QMainWindow instance
+        BasketballCrowdCounting.setWindowTitle('basketball-court-crowd-counting')
         BasketballCrowdCounting.setObjectName("BasketballCrowdCounting")
         BasketballCrowdCounting.resize(1366, 768)
         self.centralwidget = QtWidgets.QWidget(BasketballCrowdCounting)
@@ -830,7 +831,7 @@ class Ui_BasketballCrowdCounting(object):
 
     def retranslateUi(self, BasketballCrowdCounting):
         _translate = QtCore.QCoreApplication.translate
-        BasketballCrowdCounting.setWindowTitle(_translate("BasketballCrowdCounting", "MainWindow"))
+        BasketballCrowdCounting.setWindowTitle(_translate("BasketballCrowdCounting", "basketball-court-crowd-counting"))
         self.OpenFolderButton.setText(_translate("BasketballCrowdCounting", "Open Folder"))
         self.Number.setText(_translate("BasketballCrowdCounting", "Total Image"))
         self.ProcessButton.setText(_translate("BasketballCrowdCounting", "Start Process"))
@@ -1140,7 +1141,7 @@ class YOLOv5ProcessingPage:
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "YoloV5"))
         self.Original_label.setText(_translate("MainWindow", "Original Image"))
         self.Predict_label.setText(_translate("MainWindow", "YoloV5 Predict Image"))
         self.People_label.setText(_translate("MainWindow", "People Count :"))
@@ -1291,7 +1292,7 @@ class YOLOv8ProcessingPage:
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "YoloV8"))
         self.Original_label.setText(_translate("MainWindow", "Original Image"))
         self.Predict_label.setText(_translate("MainWindow", "YoloV8 Predict Image"))
         self.People_label.setText(_translate("MainWindow", "People Count :"))
@@ -1442,7 +1443,7 @@ class MaskRCNNProcessingPage:
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Mask-R-CNN"))
         self.Original_label.setText(_translate("MainWindow", "Original Image"))
         self.Predict_label.setText(_translate("MainWindow", "Mask-R-CNN Predict Image"))
         self.People_label.setText(_translate("MainWindow", "People Count :"))
@@ -1591,7 +1592,7 @@ class FasterRCNNProcessingPage:
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Faster-R-CNN"))
         self.Original_label.setText(_translate("MainWindow", "Original Image"))
         self.Predict_label.setText(_translate("MainWindow", "Faster-R-CNN Predict Image"))
         self.People_label.setText(_translate("MainWindow", "People Count :"))
