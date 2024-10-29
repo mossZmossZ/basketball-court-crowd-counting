@@ -14,7 +14,7 @@ from PyQt5.QtGui import QPixmap
 from PIL import Image, ImageOps
 import numpy as np
 
-class Worker(QtCore.QObject):
+class WorkerMaskRCNN(QtCore.QObject):
     progress = pyqtSignal(int, str, str, int, str)  # Signal to update progress
     completed = pyqtSignal(str)                     # Signal for completion message
 
@@ -238,7 +238,7 @@ class Ui_MainWindow(object):
 
         # Create a QThread and a worker
         self.thread = QtCore.QThread()
-        self.worker = Worker()
+        self.worker = WorkerMaskRCNN()
 
         # Move the worker to the thread
         self.worker.moveToThread(self.thread)
