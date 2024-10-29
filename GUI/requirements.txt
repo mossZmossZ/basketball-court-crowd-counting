@@ -1,0 +1,11 @@
+os
+sqlite3
+sys
+opencv-python-headless
+numpy
+torch
+torchvision
+matplotlib
+pyqt5
+pillow
+ultralytics
