@@ -17,7 +17,7 @@ This project leverages computer vision and deep learning to count people on a ba
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/basketball-court-crowd-counting.git
+   git clone https://github.com/mossZmossZ/basketball-court-crowd-counting.git
    cd basketball-court-crowd-counting
 2. **Install Dependencies**
    ```bash
